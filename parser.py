@@ -3,7 +3,6 @@
 
 from itertools import chain
 from nltk.parse import DependencyGraph
-import copy
 
 
 class PartialParse(object):
@@ -232,6 +231,60 @@ class PartialParse(object):
             assume that a valid move exists that heads towards the
             target graph
         """
+
+
+        def is_left_dep(head_node, dep_node):
+            """Find if a node is an arc-left dependent of another from 
+            a DependencyGraph
+            
+            Args:
+                head_node:
+                    A The graph node we want to check for dependence
+                dep_node:
+                    The index of the possible arc-left dependent of the head node
+            Returns:
+                dep:
+                    A boolean indicating whether or not there's arc-left 
+                    dependence.
+                deprel:
+                    The deprel of the arc-left node. None if no dependence.
+            """
+            if dep_node > head_node['address']:
+                # If this is bigger, then this is no left-arc anyway
+                return False, None
+            for deprel, deps in head_node['deps'].items():
+                for dep in deps:
+                    if dep == dep_node:
+                        return True, deprel
+            return False, None
+
+
+        def is_right_dep(head_node, dep_node):
+            """Find if a node is an arc-right dependent of another from 
+            a DependencyGraph
+            
+            Args:
+                head_node:
+                    A The graph node we want to check for dependence
+                dep_node:
+                    The index of the possible arc-right dependent of the head node
+            Returns:
+                dep:
+                    A boolean indicating whether or not there's arc-right 
+                    dependence.
+                deprel:
+                    The deprel of the arc-right node. None if no dependence.
+            """
+            if dep_node < head_node['address']:
+                # If this is smaller, then this is no right-arc anyway
+                return False, None
+            for deprel, deps in head_node['deps'].items():
+                for dep in deps:
+                    if dep == dep_node:
+                        return True, deprel
+            return False, None
+
+
         if self.complete:
             raise ValueError('PartialParse already completed')
         transition_id, deprel = -1, None
@@ -328,7 +381,10 @@ def minibatch_parse(sentences, model, batch_size):
     """
     arcs = []
     partial_parses = [PartialParse(sentence) for sentence in sentences]
-    unfinished_parses = copy.copy(partial_parses)
+    # Shallow copy
+    unfinished_parses = []
+    for pp in partial_parses:
+        unfinished_parses.append(pp)
 
     while len(unfinished_parses):
         if len(unfinished_parses) < batch_size:
@@ -374,61 +430,9 @@ def get_left_deps(node):
     return (dep for dep in get_deps(node) if dep < node['address'])
 
 
-def is_left_dep(head_node, dep_node):
-    """Find if a node is an arc-left dependent of another from 
-    a DependencyGraph
-    
-    Args:
-        head_node:
-            A The graph node we want to check for dependence
-        dep_node:
-            The index of the possible arc-left dependent of the head node
-    Returns:
-        dep:
-            A boolean indicating whether or not there's arc-left 
-            dependence.
-        deprel:
-            The deprel of the arc-left node. None if no dependence.
-    """
-    if dep_node > head_node['address']:
-        # If this is bigger, then this is no left-arc anyway
-        return False, None
-    for deprel, deps in head_node['deps'].items():
-        for dep in deps:
-            if dep == dep_node:
-                return True, deprel
-    return False, None
-
-
 def get_right_deps(node):
     """Get the arc-right dependants of a node from a DependencyGraph"""
     return (dep for dep in get_deps(node) if dep > node['address'])
-
-
-def is_right_dep(head_node, dep_node):
-    """Find if a node is an arc-right dependent of another from 
-    a DependencyGraph
-    
-    Args:
-        head_node:
-            A The graph node we want to check for dependence
-        dep_node:
-            The index of the possible arc-right dependent of the head node
-    Returns:
-        dep:
-            A boolean indicating whether or not there's arc-right 
-            dependence.
-        deprel:
-            The deprel of the arc-right node. None if no dependence.
-    """
-    if dep_node < head_node['address']:
-        # If this is smaller, then this is no right-arc anyway
-        return False, None
-    for deprel, deps in head_node['deps'].items():
-        for dep in deps:
-            if dep == dep_node:
-                return True, deprel
-    return False, None
 
 
 # *** TESTING ***
