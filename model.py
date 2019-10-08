@@ -72,10 +72,10 @@ class ParserModel(nn.Module):
                 numpy.ndarray of shape (n_word_ids, embed_size) representing
                 matrix of pre-trained word embeddings
         """
-        self.word_embeddings = torch.Tensor(word_embeddings, requires_grad=True)
-        self.tag_embeddings = he_initializer([self.config.n_tag_ids, embed_size])
+        self.word_embeddings = torch.tensor(word_embeddings, requires_grad=True)
+        self.tag_embeddings = he_initializer([self.config.n_tag_ids, self.config.embed_size])
         self.tag_embeddings.requires_grad_(True)
-        self.deprel_embeddings = he_initializer([self.config.n_deprel_ids, embed_size])
+        self.deprel_embeddings = he_initializer([self.config.n_deprel_ids, self.config.embed_size])
         self.deprel_embeddings.requires_grad_(True)
 
     def create_weights_biases(self):
@@ -157,12 +157,12 @@ class ParserModel(nn.Module):
         # Make sure we got the right size
         expected_size = list(id_batch.size())
         expected_size.append(embedding_matrix.size()[1])
-        if list(lookup_result.size()) is not expected_size:
+        if list(lookup_result.size()) != expected_size:
             raise ValueError('Wrong lookup matrix size')
         embedded_batch = torch.reshape(lookup_result, (expected_size[0], -1))
         # Make sure we still have the correct size
         expected_size = [expected_size[0], expected_size[1] * expected_size[2]]
-        if list(embedded_batch.size()) is not expected_size:
+        if list(embedded_batch.size()) != expected_size:
             raise ValueError('Wrong reshaped lookup matrix size')
         return embedded_batch
 
@@ -197,9 +197,11 @@ class ParserModel(nn.Module):
         lu_deprel_embeddings = self.embedding_lookup(deprel_id_batch, self.config.n_deprel_ids, self.deprel_embeddings)
         x = torch.cat((lu_word_embeddings, lu_tag_embeddings, lu_deprel_embeddings), 1)
         # Verify we have the correct size of the matrix
-        N = n_word_features + n_tag_features + n_deprel_features
+        N = self.config.n_word_features + self.config.n_tag_features + self.config.n_deprel_features
         expected_size = [word_id_batch.size()[0], N * self.config.embed_size]
-        if list(x.size()) is not expected_size:
+        if list(x.size()) != expected_size:
+            print(x.size())
+            print(expected_size)
             raise ValueError('Wrong concat embeddings shape')
         return x
 
@@ -243,12 +245,12 @@ class ParserModel(nn.Module):
         x = self.get_concat_embeddings(torch.tensor(word_id_batch),
                                        torch.tensor(tag_id_batch),
                                        torch.tensor(deprel_id_batch))
-        xW_h = tensor.mm(x, self.W_h)
-        prerelu_h = tensor.add(xW_h, b_h)
+        xW_h = torch.mm(x, self.W_h)
+        prerelu_h = torch.add(xW_h, self.b_h)
         h = F.relu(prerelu_h)
         h_drop = F.dropout(h, self.config.dropout, training=True)
-        h_dropW_o = tensor.mm(h_drop, self.W_o)
-        pred = tensor.add(h_dropW_o, self.b_o)
+        h_dropW_o = torch.mm(h_drop, self.W_o)
+        pred = torch.add(h_dropW_o, self.b_o)
         return pred
 
     def get_loss(self, prediction_batch, class_batch):

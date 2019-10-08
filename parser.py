@@ -392,15 +392,23 @@ def minibatch_parse(sentences, model, batch_size):
         else:
             minibatch = unfinished_parses[0:batch_size]
         td_pairs = model.predict(minibatch)
+        to_del = []
         for i in range(len(minibatch)):
             pp = minibatch[i]
             td_pair = td_pairs[i]
             try:
                 pp.parse_step(td_pair[0], td_pair[1])
             except ValueError:
-                del unfinished_parses[i]
+                # Mark for deleting, don't actually delete yet 
+                # as it will mess with the for loop 
+                to_del.append(i)
             if pp.complete:
-                del unfinished_parses[i]
+                # Mark for deleting, don't actually delete yet 
+                # as it will mess with the for loop 
+                to_del.append(i)
+        # Now safely delete
+        for i in reversed(to_del):
+            del unfinished_parses[i]
     
     for pp in partial_parses:
         arcs.append(pp.arcs)
