@@ -248,7 +248,7 @@ class ParserModel(nn.Module):
         xW_h = torch.mm(x, self.W_h)
         prerelu_h = torch.add(xW_h, self.b_h)
         h = F.relu(prerelu_h)
-        h_drop = F.dropout(h, self.config.dropout, training=True)
+        h_drop = F.dropout(h, self.config.dropout, training=self.training)
         h_dropW_o = torch.mm(h_drop, self.W_o)
         pred = torch.add(h_dropW_o, self.b_o)
         return pred

@@ -25,8 +25,9 @@ def he_initializer(shape, **kwargs):
     Hint: You might find torch.normal() useful.
     """
     print(shape)
-    dist = torch.distributions.normal.Normal(0, torch.sqrt(2 / shape[0]))
-    out = dist.sample(torch.Size(shape))
+    mean = torch.zeros(shape)
+    std = torch.add(torch.zeros(shape), torch.sqrt(torch.tensor([2 / shape[0]])))
+    out = torch.normal(mean, std)
     return out
 
 

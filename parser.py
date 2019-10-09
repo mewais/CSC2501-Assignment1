@@ -299,7 +299,17 @@ class PartialParse(object):
         elif len(self.stack) == 2:
             # If there's nothing else to push, it has to be the right arc from ROOT
             if self.next == len(self.sentence):
-                transition_id, deprel = self.right_arc_id, 'root'
+                # transition_id, deprel = self.right_arc_id, 'root'
+                # The solution above is suboptimal.
+                # It turns out that most (at least the ones I've looked at) cases in 
+                # the model use 'root' instead of 'ROOT'. but the simple tests, and
+                # perhaps some other test cases I've not seen use 'ROOT'. So to 
+                # completely get rid of of this issue, I'll read it like other nodes, 
+                # not hand write it to 'root' or 'ROOT'.
+                right_arc, right_deprel = is_right_dep(graph.nodes[self.stack[0]], self.stack[-1])
+                if not right_arc:
+                    raise ValueError('This should be the last right arc (ROOT)')
+                transition_id, deprel = self.right_arc_id, right_deprel
             else:
                 transition_id, deprel = self.shift_id, None
         # If it's anything other than those two special cases, we have to decide 
