@@ -299,7 +299,7 @@ class PartialParse(object):
         elif len(self.stack) == 2:
             # If there's nothing else to push, it has to be the right arc from ROOT
             if self.next == len(self.sentence):
-                transition_id, deprel = self.right_arc_id, 'ROOT'
+                transition_id, deprel = self.right_arc_id, 'root'
             else:
                 transition_id, deprel = self.shift_id, None
         # If it's anything other than those two special cases, we have to decide 
@@ -321,7 +321,13 @@ class PartialParse(object):
                 # Check if it's the head of something in the queue.
                 # In this case, doing the right arc wastes the opportunity
                 # to handle the dependents. We have to shift them in first.
-                if list(get_right_deps(graph.nodes[-1])):
+                all_right_deps = list(get_right_deps(graph.nodes[self.stack[-1]]))
+                remaining_right_deps = False
+                for right_dep in all_right_deps:
+                    if right_dep >= self.next:
+                        remaining_right_deps = True
+                        break
+                if remaining_right_deps:
                     # If yes, shift
                     transition_id, deprel = self.shift_id, None 
                 else:

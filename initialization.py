@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Initialization functions"""
 
-import math
 import torch
 
 
@@ -26,7 +25,7 @@ def he_initializer(shape, **kwargs):
     Hint: You might find torch.normal() useful.
     """
     print(shape)
-    dist = torch.distributions.normal.Normal(0, math.sqrt(2 / shape[0]))
+    dist = torch.distributions.normal.Normal(0, torch.sqrt(2 / shape[0]))
     out = dist.sample(torch.Size(shape))
     return out
 
